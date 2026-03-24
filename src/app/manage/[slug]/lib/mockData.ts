@@ -4,8 +4,14 @@ export interface Appointment {
   employeeName: string;
   date: string;
   time: string;
+  endTime?: string;
   durationMinutes: number;
   status: 'upcoming' | 'past' | 'cancelled';
+  notes?: string;
+  price?: number | null;
+  finalPrice?: number | null;
+  paid?: boolean;
+  location?: string;
 }
 
 export interface CustomerData {

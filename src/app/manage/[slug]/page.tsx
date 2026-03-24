@@ -32,7 +32,7 @@ export default function ManagePage() {
   const {
     setTheme,
     setCompanyInfo,
-    setAppointments,
+    setAppointmentLists,
     setLoadingAppointments,
     setAppointmentsError,
     setCustomerEmail,
@@ -49,8 +49,11 @@ export default function ManagePage() {
     setAppointmentsError(null);
     try {
       const result = await getPortalAppointments(companySlug, email);
-      // NormalisedAppointment is structurally identical to Appointment
-      setAppointments(result.all as unknown as Appointment[]);
+      setAppointmentLists({
+        all: result.all as unknown as Appointment[],
+        upcoming: result.upcoming as unknown as Appointment[],
+        past: result.past as unknown as Appointment[],
+      });
       if (result.customerFirstName) {
         setCustomerFirstName(result.customerFirstName);
       }

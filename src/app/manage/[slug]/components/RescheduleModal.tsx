@@ -22,9 +22,9 @@ export default function RescheduleModal() {
     rescheduleModalOpen,
     closeRescheduleModal,
     selectedAppointmentId,
-    appointments,
+    allAppointments,
     customerEmail,
-    setAppointments,
+    setAppointmentLists,
     setCustomerFirstName,
     showToast,
     theme,
@@ -38,7 +38,7 @@ export default function RescheduleModal() {
   const [slotsError, setSlotsError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
 
-  const appointment = appointments.find((a) => a.id === selectedAppointmentId);
+  const appointment = allAppointments.find((a) => a.id === selectedAppointmentId);
 
   const handleClose = () => {
     closeRescheduleModal();
@@ -94,7 +94,11 @@ export default function RescheduleModal() {
       handleClose();
       // Refresh the appointments list from backend
       const result = await getPortalAppointments(slug, customerEmail);
-      setAppointments(result.all as unknown as Appointment[]);
+      setAppointmentLists({
+        all: result.all as unknown as Appointment[],
+        upcoming: result.upcoming as unknown as Appointment[],
+        past: result.past as unknown as Appointment[],
+      });
       if (result.customerFirstName) setCustomerFirstName(result.customerFirstName);
     } catch (err) {
       const msg =

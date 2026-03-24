@@ -25,9 +25,15 @@ interface RawAppointment {
   employee_name?: string;
   date: string;
   time: string;
+  end_time?: string;
   durationMinutes?: number;
   duration_minutes?: number;
   status: 'upcoming' | 'past' | 'cancelled';
+  notes?: string;
+  price?: number | null;
+  final_price?: number | null;
+  paid?: boolean;
+  location?: string;
 }
 
 /** Normalised appointment shape used throughout the frontend. */
@@ -37,8 +43,14 @@ export interface NormalisedAppointment {
   employeeName: string;
   date: string;
   time: string;
+  endTime: string;
   durationMinutes: number;
   status: 'upcoming' | 'past' | 'cancelled';
+  notes: string;
+  price: number | null;
+  finalPrice: number | null;
+  paid: boolean;
+  location: string;
 }
 
 function normaliseAppointment(raw: RawAppointment): NormalisedAppointment {
@@ -48,8 +60,14 @@ function normaliseAppointment(raw: RawAppointment): NormalisedAppointment {
     employeeName: raw.employeeName ?? raw.employee_name ?? '',
     date: raw.date,
     time: raw.time,
+    endTime: raw.end_time ?? '',
     durationMinutes: raw.durationMinutes ?? raw.duration_minutes ?? 0,
     status: raw.status,
+    notes: raw.notes ?? '',
+    price: raw.price ?? null,
+    finalPrice: raw.final_price ?? null,
+    paid: raw.paid ?? false,
+    location: raw.location ?? '',
   };
 }
 

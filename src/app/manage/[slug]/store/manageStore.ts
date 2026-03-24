@@ -25,7 +25,9 @@ interface ManageStore {
   customerFirstName: string;
   isAuthenticated: boolean;
 
-  appointments: Appointment[];
+  allAppointments: Appointment[];
+  upcomingAppointments: Appointment[];
+  pastAppointments: Appointment[];
   isLoadingAppointments: boolean;
   appointmentsError: string | null;
 
@@ -42,7 +44,7 @@ interface ManageStore {
   setCustomerEmail: (email: string) => void;
   setCustomerFirstName: (name: string) => void;
   setAuthenticated: (value: boolean) => void;
-  setAppointments: (appointments: Appointment[]) => void;
+  setAppointmentLists: (lists: { all: Appointment[]; upcoming: Appointment[]; past: Appointment[] }) => void;
   setLoadingAppointments: (loading: boolean) => void;
   setAppointmentsError: (error: string | null) => void;
   togglePastAppointments: () => void;
@@ -72,7 +74,9 @@ export const useManageStore = create<ManageStore>((set) => ({
   customerFirstName: '',
   isAuthenticated: false,
 
-  appointments: [],
+  allAppointments: [],
+  upcomingAppointments: [],
+  pastAppointments: [],
   isLoadingAppointments: false,
   appointmentsError: null,
 
@@ -89,7 +93,8 @@ export const useManageStore = create<ManageStore>((set) => ({
   setCustomerEmail: (email) => set({ customerEmail: email }),
   setCustomerFirstName: (name) => set({ customerFirstName: name }),
   setAuthenticated: (value) => set({ isAuthenticated: value }),
-  setAppointments: (appointments) => set({ appointments }),
+  setAppointmentLists: ({ all, upcoming, past }) =>
+    set({ allAppointments: all, upcomingAppointments: upcoming, pastAppointments: past }),
   setLoadingAppointments: (loading) => set({ isLoadingAppointments: loading }),
   setAppointmentsError: (error) => set({ appointmentsError: error }),
   togglePastAppointments: () =>
@@ -110,7 +115,9 @@ export const useManageStore = create<ManageStore>((set) => ({
       customerEmail: '',
       customerFirstName: '',
       isAuthenticated: false,
-      appointments: [],
+      allAppointments: [],
+      upcomingAppointments: [],
+      pastAppointments: [],
       appointmentsError: null,
       showPastAppointments: false,
       toast: null,

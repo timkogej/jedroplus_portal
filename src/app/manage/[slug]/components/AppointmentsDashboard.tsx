@@ -35,12 +35,14 @@ export default function AppointmentsDashboard() {
   const slug = params?.slug as string;
 
   const {
-    appointments,
+    allAppointments,
+    upcomingAppointments,
+    pastAppointments,
     customerEmail,
     customerFirstName,
     isLoadingAppointments,
     appointmentsError,
-    setAppointments,
+    setAppointmentLists,
     setLoadingAppointments,
     setAppointmentsError,
     setCustomerFirstName,
@@ -49,20 +51,25 @@ export default function AppointmentsDashboard() {
     logout,
   } = useManageStore();
 
-  const upcoming = appointments.filter((a) => a.status === 'upcoming');
-  const past = appointments.filter((a) => a.status === 'past');
-
   // Fetch appointments when dashboard mounts (covers the session-restore path
   // where page.tsx already called loadAppointments, but this is a safety net
   // for cases where appointments are still empty after mount).
   useEffect(() => {
-    if (!slug || !customerEmail || appointments.length > 0 || isLoadingAppointments) return;
+    const hasAppointments =
+      allAppointments.length > 0 ||
+      upcomingAppointments.length > 0 ||
+      pastAppointments.length > 0;
+    if (!slug || !customerEmail || hasAppointments || isLoadingAppointments) return;
     const fetch = async () => {
       setLoadingAppointments(true);
       setAppointmentsError(null);
       try {
         const result = await getPortalAppointments(slug, customerEmail);
-        setAppointments(result.all as unknown as Appointment[]);
+        setAppointmentLists({
+          all: result.all as unknown as Appointment[],
+          upcoming: result.upcoming as unknown as Appointment[],
+          past: result.past as unknown as Appointment[],
+        });
         if (result.customerFirstName) setCustomerFirstName(result.customerFirstName);
       } catch (err) {
         const msg =
@@ -135,7 +142,7 @@ export default function AppointmentsDashboard() {
         {!isLoadingAppointments && !appointmentsError && (
           <>
             {/* Upcoming appointments */}
-            {upcoming.length === 0 ? (
+            {upcomingAppointments.length === 0 ? (
               <EmptyState />
             ) : (
               <>
@@ -150,7 +157,7 @@ export default function AppointmentsDashboard() {
                   animate="animate"
                   className="space-y-3"
                 >
-                  {upcoming.map((apt) => (
+                  {upcomingAppointments.map((apt) => (
                     <motion.div key={apt.id} variants={cardItem}>
                       <AppointmentCard appointment={apt} />
                     </motion.div>
@@ -160,7 +167,7 @@ export default function AppointmentsDashboard() {
             )}
 
             {/* Past appointments */}
-            <PastAppointments appointments={past} />
+            <PastAppointments appointments={pastAppointments} />
           </>
         )}
 
