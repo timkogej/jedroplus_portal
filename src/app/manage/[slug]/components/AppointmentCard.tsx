@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useManageStore } from '../store/manageStore';
 import type { Appointment } from '../lib/mockData';
-import { formatDate } from '../lib/utils';
+import { formatDate, formatTime, calcDuration } from '../lib/utils';
 
 interface AppointmentCardProps {
   appointment: Appointment;
@@ -30,7 +30,12 @@ export default function AppointmentCard({ appointment }: AppointmentCardProps) {
           {formatDate(appointment.date)}
         </p>
         <p className="text-sm text-gray-400">
-          {appointment.time} · {appointment.durationMinutes} min
+          {formatTime(appointment.time)}
+          {appointment.endTime
+            ? ` · ${calcDuration(appointment.time, appointment.endTime)} min`
+            : appointment.durationMinutes
+              ? ` · ${appointment.durationMinutes} min`
+              : ''}
         </p>
       </div>
 

@@ -11,7 +11,7 @@ import {
 } from '../lib/portalApi';
 import MiniCalendar from './MiniCalendar';
 import TimeSlots from './TimeSlots';
-import { formatDate, formatDateShort } from '../lib/utils';
+import { formatDate, formatDateShort, formatTime } from '../lib/utils';
 import type { Appointment } from '../lib/mockData';
 
 export default function RescheduleModal() {
@@ -157,7 +157,7 @@ export default function RescheduleModal() {
                     {appointment.serviceName} z {appointment.employeeName}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    Trenutno: {formatDate(appointment.date)} ob {appointment.time}
+                    Trenutno: {formatDate(appointment.date)} ob {formatTime(appointment.time)}
                   </p>
                 </div>
 

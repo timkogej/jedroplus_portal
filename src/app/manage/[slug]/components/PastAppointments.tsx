@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useManageStore } from '../store/manageStore';
 import type { Appointment } from '../lib/mockData';
-import { formatDateShort } from '../lib/utils';
+import { formatDateShort, formatTime } from '../lib/utils';
 
 interface PastAppointmentsProps {
   appointments: Appointment[];
@@ -50,7 +50,7 @@ export default function PastAppointments({ appointments }: PastAppointmentsProps
                     <span className="text-sm text-gray-400">{apt.employeeName}</span>
                   </div>
                   <p className="text-xs text-gray-400">
-                    {formatDateShort(apt.date)} · {apt.time}
+                    {formatDateShort(apt.date)} · {formatTime(apt.time)}
                   </p>
                 </div>
               ))}

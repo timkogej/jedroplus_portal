@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useParams } from 'next/navigation';
 import { useManageStore } from '../store/manageStore';
 import { cancelPortalAppointment, getPortalAppointments } from '../lib/portalApi';
-import { formatDate } from '../lib/utils';
+import { formatDate, formatTime } from '../lib/utils';
 import type { Appointment } from '../lib/mockData';
 
 export default function CancelModal() {
@@ -101,7 +101,7 @@ export default function CancelModal() {
                   </p>
                   <p className="text-sm text-gray-500 mb-2">{appointment.employeeName}</p>
                   <p className="text-xs text-gray-400">
-                    {formatDate(appointment.date)} ob {appointment.time}
+                    {formatDate(appointment.date)} ob {formatTime(appointment.time)}
                   </p>
                 </div>
 
