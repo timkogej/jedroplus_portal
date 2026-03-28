@@ -247,7 +247,8 @@ export interface RescheduleConfirmPayload {
   customerNote?: string;
 }
 
-/** Confirm the chosen date/time for rescheduling. */
+/** Confirm the chosen date/time for rescheduling.
+ *  Routes through the Next.js API proxy to avoid CORS preflight issues. */
 export async function confirmPortalReschedule(
   p: RescheduleConfirmPayload
 ): Promise<void> {
@@ -265,5 +266,26 @@ export async function confirmPortalReschedule(
     ...(p.customerGender ? { customer_gender: p.customerGender } : {}),
     ...(p.customerNote ? { customer_note: p.customerNote } : {}),
   };
-  await portalPost<BaseResponse>('customer-portal-reschedule-confirm', body);
+
+  let res: Response;
+  try {
+    res = await fetch('/api/reschedule-confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    throw new Error('Napaka pri komunikaciji s strežnikom.');
+  }
+
+  let data: BaseResponse;
+  try {
+    data = (await res.json()) as BaseResponse;
+  } catch {
+    throw new Error('Strežnik je vrnil nepričakovan odgovor.');
+  }
+
+  if (!res.ok || data.success === false) {
+    throw new Error(data.message ?? 'Prišlo je do napake. Poskusite znova.');
+  }
 }
