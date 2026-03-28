@@ -231,19 +231,39 @@ export async function getPortalRescheduleSlots(
   return data.slots ?? [];
 }
 
+/** Payload for the reschedule-confirm webhook. */
+export interface RescheduleConfirmPayload {
+  companySlug: string;
+  date: string;
+  time: string;
+  customerEmail: string;
+  original_appointment_id: string;
+  appointment_row_id?: string;
+  serviceId?: string;
+  employeeId?: string;
+  customerName?: string;
+  customerPhone?: string;
+  customerGender?: string;
+  customerNote?: string;
+}
+
 /** Confirm the chosen date/time for rescheduling. */
 export async function confirmPortalReschedule(
-  companySlug: string,
-  email: string,
-  appointmentId: string,
-  newDate: string,
-  newTime: string
+  p: RescheduleConfirmPayload
 ): Promise<void> {
-  await portalPost<BaseResponse>('customer-portal-reschedule-confirm', {
-    company_slug: companySlug,
-    email,
-    appointment_id: appointmentId,
-    new_date: newDate,
-    new_time: newTime,
-  });
+  const body: Record<string, string> = {
+    company_slug: p.companySlug,
+    email: p.customerEmail,
+    appointment_id: p.original_appointment_id,
+    appointment_row_id: p.appointment_row_id ?? p.original_appointment_id,
+    new_date: p.date,
+    new_time: p.time,
+    ...(p.serviceId ? { service_id: p.serviceId } : {}),
+    ...(p.employeeId ? { employee_id: p.employeeId } : {}),
+    ...(p.customerName ? { customer_name: p.customerName } : {}),
+    ...(p.customerPhone ? { customer_phone: p.customerPhone } : {}),
+    ...(p.customerGender ? { customer_gender: p.customerGender } : {}),
+    ...(p.customerNote ? { customer_note: p.customerNote } : {}),
+  };
+  await portalPost<BaseResponse>('customer-portal-reschedule-confirm', body);
 }

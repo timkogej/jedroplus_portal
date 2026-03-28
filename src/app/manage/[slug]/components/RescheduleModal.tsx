@@ -24,6 +24,7 @@ export default function RescheduleModal() {
     selectedAppointmentId,
     allAppointments,
     customerEmail,
+    customerFirstName,
     setAppointmentLists,
     setCustomerFirstName,
     showToast,
@@ -75,20 +76,24 @@ export default function RescheduleModal() {
     }
   };
 
-  /** Called when the user confirms the new date + time. */
-  const handleConfirm = async () => {
-    if (!selectedDate || !selectedTime || !appointment || confirming) return;
+  /** Called when the user clicks an available time slot — sends the reschedule confirmation immediately. */
+  const handleTimeSelect = async (time: string) => {
+    if (!selectedDate || !appointment || confirming) return;
+    setSelectedTime(time);
     setConfirming(true);
     try {
-      await confirmPortalReschedule(
-        slug,
+      await confirmPortalReschedule({
+        companySlug: slug,
+        date: selectedDate,
+        time,
         customerEmail,
-        appointment.id,
-        selectedDate,
-        selectedTime
-      );
+        original_appointment_id: appointment.id,
+        appointment_row_id: appointment.id,
+        customerName: customerFirstName || undefined,
+        customerNote: appointment.notes || undefined,
+      });
       showToast(
-        `Termin uspešno prestavljen na ${formatDateShort(selectedDate)} ob ${selectedTime}.`,
+        `Termin uspešno prestavljen na ${formatDateShort(selectedDate)} ob ${time}.`,
         'success'
       );
       handleClose();
@@ -107,6 +112,11 @@ export default function RescheduleModal() {
     } finally {
       setConfirming(false);
     }
+  };
+
+  /** Confirm button handler — kept for UI continuity, delegates to handleTimeSelect if time already selected. */
+  const handleConfirm = async () => {
+    if (selectedTime) await handleTimeSelect(selectedTime);
   };
 
   const canConfirm = !!selectedDate && !!selectedTime && !confirming && !loadingSlots;
@@ -205,7 +215,7 @@ export default function RescheduleModal() {
                         <TimeSlots
                           slots={slots}
                           selectedTime={selectedTime}
-                          onTimeSelect={setSelectedTime}
+                          onTimeSelect={handleTimeSelect}
                         />
                       )}
                     </motion.div>
