@@ -89,8 +89,6 @@ export default function AppointmentsDashboard() {
     logout();
   };
 
-  const displayName = customerFirstName || customerEmail.split('@')[0] || '';
-
   return (
     <>
       <motion.div
@@ -102,13 +100,16 @@ export default function AppointmentsDashboard() {
         <ManageHeader />
 
         {/* Greeting row */}
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-sm font-medium text-gray-800">
-            Pozdravljeni{displayName ? `, ${displayName}` : ''}
-          </p>
+        <div className="flex items-center justify-between mb-6 gap-4">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-gray-800">Pozdravljeni</p>
+            {customerEmail && (
+              <p className="text-xs text-gray-400 truncate">{customerEmail}</p>
+            )}
+          </div>
           <button
             onClick={handleLogout}
-            className="text-sm text-gray-400 hover:text-gray-600 transition-colors duration-200"
+            className="text-sm text-gray-400 hover:text-gray-600 transition-colors duration-200 shrink-0"
           >
             Odjava ↗
           </button>
