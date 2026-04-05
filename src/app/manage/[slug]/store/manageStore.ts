@@ -17,6 +17,7 @@ interface Toast {
 
 interface ManageStore {
   theme: Theme;
+  themeReady: boolean;
   companyName: string;
   companySlug: string;
 
@@ -39,6 +40,7 @@ interface ManageStore {
   toast: Toast | null;
 
   setTheme: (theme: Theme) => void;
+  setThemeReady: (ready: boolean) => void;
   setCompanyInfo: (name: string, slug: string) => void;
   setCurrentView: (view: ViewState) => void;
   setCustomerEmail: (email: string) => void;
@@ -66,6 +68,7 @@ const DEFAULT_THEME: Theme = {
 
 export const useManageStore = create<ManageStore>((set) => ({
   theme: DEFAULT_THEME,
+  themeReady: false,
   companyName: '',
   companySlug: '',
 
@@ -88,6 +91,7 @@ export const useManageStore = create<ManageStore>((set) => ({
   toast: null,
 
   setTheme: (theme) => set({ theme }),
+  setThemeReady: (ready) => set({ themeReady: ready }),
   setCompanyInfo: (name, slug) => set({ companyName: name, companySlug: slug }),
   setCurrentView: (view) => set({ currentView: view }),
   setCustomerEmail: (email) => set({ customerEmail: email }),
