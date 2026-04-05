@@ -76,16 +76,21 @@ export default function RescheduleModal() {
     }
   };
 
-  /** Called when the user clicks an available time slot — sends the reschedule confirmation immediately. */
-  const handleTimeSelect = async (time: string) => {
-    if (!selectedDate || !appointment || confirming) return;
+  /** Called when the user clicks an available time slot — only selects, does NOT send yet. */
+  const handleTimeSelect = (time: string) => {
+    if (confirming) return;
     setSelectedTime(time);
+  };
+
+  /** Confirm button handler — sends the reschedule after user explicitly confirms. */
+  const handleConfirm = async () => {
+    if (!selectedDate || !selectedTime || !appointment || confirming) return;
     setConfirming(true);
     try {
       await confirmPortalReschedule({
         companySlug: slug,
         date: selectedDate,
-        time,
+        time: selectedTime,
         customerEmail,
         original_appointment_id: appointment.id,
         appointment_row_id: appointment.id,
@@ -93,7 +98,7 @@ export default function RescheduleModal() {
         customerNote: appointment.notes || undefined,
       });
       showToast(
-        `Termin uspešno prestavljen na ${formatDateShort(selectedDate)} ob ${time}.`,
+        `Termin uspešno prestavljen na ${formatDateShort(selectedDate)} ob ${selectedTime}.`,
         'success'
       );
       handleClose();
@@ -107,19 +112,13 @@ export default function RescheduleModal() {
       if (result.customerFirstName) setCustomerFirstName(result.customerFirstName);
     } catch (err) {
       const msg =
-        err instanceof Error ? err.message : 'Napaka pri prestavitveni termina.';
+        err instanceof Error ? err.message : 'Napaka pri prestavitvi termina.';
       showToast(msg, 'error');
     } finally {
       setConfirming(false);
     }
   };
 
-  /** Confirm button handler — kept for UI continuity, delegates to handleTimeSelect if time already selected. */
-  const handleConfirm = async () => {
-    if (selectedTime) await handleTimeSelect(selectedTime);
-  };
-
-  const canConfirm = !!selectedDate && !!selectedTime && !confirming && !loadingSlots;
 
   return (
     <AnimatePresence>
@@ -222,18 +221,34 @@ export default function RescheduleModal() {
                   )}
                 </AnimatePresence>
 
-                {/* Confirm button */}
-                <button
-                  onClick={handleConfirm}
-                  disabled={!canConfirm}
-                  className="w-full py-3.5 rounded-xl text-white text-sm font-medium tracking-wide transition-opacity duration-200"
-                  style={{
-                    background: `linear-gradient(135deg, ${theme.bgFrom}, ${theme.bgTo})`,
-                    opacity: canConfirm ? 1 : 0.35,
-                  }}
-                >
-                  {confirming ? 'Posodabljam...' : 'Potrdi spremembo'}
-                </button>
+                {/* Confirmation panel — appears once a time is selected */}
+                <AnimatePresence>
+                  {selectedDate && selectedTime && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0, transition: { duration: 0.22 } }}
+                      exit={{ opacity: 0, y: 4, transition: { duration: 0.15 } }}
+                      className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-4 space-y-3"
+                    >
+                      <p className="text-sm text-gray-700 leading-snug">
+                        Ali ste prepričani, da želite prestaviti termin na{' '}
+                        <span className="font-medium">{formatDateShort(selectedDate)}</span>{' '}
+                        ob <span className="font-medium">{selectedTime}</span>?
+                      </p>
+                      <button
+                        onClick={handleConfirm}
+                        disabled={confirming}
+                        className="w-full py-3.5 rounded-xl text-white text-sm font-medium tracking-wide transition-opacity duration-200"
+                        style={{
+                          background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`,
+                          opacity: confirming ? 0.6 : 1,
+                        }}
+                      >
+                        {confirming ? 'Posodabljam...' : 'Da, potrdi prestavitev'}
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
 
                 {/* Bottom safe area on mobile */}
                 <div className="h-2 sm:hidden" />

@@ -127,7 +127,7 @@ export default function AuthForm() {
               disabled={loading || submitted}
               className="w-full py-4 rounded-xl text-white text-sm font-medium tracking-wide transition-opacity duration-200 hover:opacity-90 active:opacity-80 disabled:opacity-60"
               style={{
-                background: `linear-gradient(135deg, ${theme.bgFrom}, ${theme.bgTo})`,
+                background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`,
               }}
             >
               {loading ? 'Pošiljam...' : submitted ? 'Poslano ✓' : 'Nadaljuj'}
