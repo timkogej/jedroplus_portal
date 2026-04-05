@@ -160,6 +160,7 @@ export interface FetchedAppointments {
   upcoming: NormalisedAppointment[];
   past: NormalisedAppointment[];
   customerFirstName: string;
+  companyName: string;
 }
 
 export async function getPortalAppointments(
@@ -185,12 +186,14 @@ export async function getPortalAppointments(
 
   const customerFirstName =
     data.customer?.firstName ?? data.customer?.first_name ?? '';
+  const companyName = data.company_name ?? '';
 
   return {
     all,
     upcoming: resolvedUpcoming,
     past: resolvedPast,
     customerFirstName,
+    companyName,
   };
 }
 

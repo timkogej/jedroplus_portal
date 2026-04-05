@@ -48,6 +48,7 @@ export default function AppointmentsDashboard() {
     setCustomerFirstName,
     setCurrentView,
     setAuthenticated,
+    setCompanyInfo,
     logout,
   } = useManageStore();
 
@@ -71,6 +72,7 @@ export default function AppointmentsDashboard() {
           past: result.past as unknown as Appointment[],
         });
         if (result.customerFirstName) setCustomerFirstName(result.customerFirstName);
+        if (result.companyName) setCompanyInfo(result.companyName, slug);
       } catch (err) {
         const msg =
           err instanceof Error ? err.message : 'Napaka pri nalaganju terminov.';

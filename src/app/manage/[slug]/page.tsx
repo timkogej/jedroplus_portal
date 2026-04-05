@@ -57,6 +57,9 @@ export default function ManagePage() {
       if (result.customerFirstName) {
         setCustomerFirstName(result.customerFirstName);
       }
+      if (result.companyName) {
+        setCompanyInfo(result.companyName, companySlug);
+      }
     } catch (err) {
       const msg =
         err instanceof Error ? err.message : 'Napaka pri nalaganju terminov.';
