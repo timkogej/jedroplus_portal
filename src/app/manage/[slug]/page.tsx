@@ -80,10 +80,11 @@ export default function ManagePage() {
         if (!res.ok) throw new Error('init failed');
         const data = await res.json();
         if (data.theme) setTheme(data.theme);
-        setCompanyInfo(data.company?.name ?? slug, data.company?.slug ?? slug);
+        if (data.company?.name) {
+          setCompanyInfo(data.company.name, data.company?.slug ?? slug);
+        }
       } catch {
         setTheme(DEFAULT_THEME);
-        setCompanyInfo(slug, slug);
       }
     };
     init();
