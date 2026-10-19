@@ -107,7 +107,7 @@ export default function ManagePage() {
           const data = await portalVerify(slug, emailParam, token);
           const firstName =
             data.customer?.firstName ?? data.customer?.first_name ?? '';
-          savePortalSession(slug, emailParam);
+          savePortalSession(slug, emailParam, data.session_token);
           setCustomerEmail(emailParam);
           if (firstName) setCustomerFirstName(firstName);
           setAuthenticated(true);
