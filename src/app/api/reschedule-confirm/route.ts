@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const N8N_BASE =
-  process.env.NEXT_PUBLIC_N8N_BASE_URL ?? 'https://tikej.app.n8n.cloud/webhook';
+  process.env.NEXT_PUBLIC_N8N_BASE_URL ?? 'https://n8n.jedroplus.com/webhook';
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
