@@ -24,8 +24,8 @@ function VerifyInner() {
 
     const verify = async () => {
       try {
-        await portalVerify(slug, email, token);
-        savePortalSession(slug, email);
+        const data = await portalVerify(slug, email, token);
+        savePortalSession(slug, email, data.session_token);
         router.replace(`/manage/${slug}`);
       } catch (err) {
         const msg =

@@ -4,6 +4,16 @@
  * known production domain.
  */
 
+import { clearPortalSession, getPortalSession } from './portalSession';
+
+/** Thrown when the backend no longer accepts the stored session. */
+export class PortalSessionExpiredError extends Error {
+  constructor() {
+    super('Seja je potekla. Prosimo, prijavite se znova.');
+    this.name = 'PortalSessionExpiredError';
+  }
+}
+
 const N8N_BASE =
   process.env.NEXT_PUBLIC_N8N_BASE_URL ?? 'https://tikej.app.n8n.cloud/webhook';
 
@@ -81,12 +91,17 @@ async function portalPost<T extends BaseResponse>(
   path: string,
   payload: Record<string, string>
 ): Promise<T> {
+  // Every call after login carries the session token from verify; the
+  // backend no longer trusts company_slug + email alone.
+  const slug = payload.company_slug;
+  const sessionToken = slug ? getPortalSession(slug)?.sessionToken : undefined;
+  const body = sessionToken && !payload.session_token ? { ...payload, session_token: sessionToken } : payload;
   let res: Response;
   try {
     res = await fetch(`${N8N_BASE}/${path}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   } catch {
     throw new Error('Napaka pri komunikaciji s strežnikom.');
@@ -97,6 +112,11 @@ async function portalPost<T extends BaseResponse>(
     data = (await res.json()) as T;
   } catch {
     throw new Error('Strežnik je vrnil nepričakovan odgovor.');
+  }
+
+  if (data.code === 'SESSION_INVALID') {
+    if (slug) clearPortalSession(slug);
+    throw new PortalSessionExpiredError();
   }
 
   if (!res.ok || data.success === false) {
@@ -121,6 +141,8 @@ export async function portalLogin(
 
 /** Step 2 — verify magic-link token; returns customer info if available. */
 export interface VerifyResponse extends BaseResponse {
+  /** Session token for the calls that follow (save with savePortalSession). */
+  session_token?: string;
   customer?: {
     firstName?: string;
     first_name?: string;
@@ -255,9 +277,11 @@ export interface RescheduleConfirmPayload {
 export async function confirmPortalReschedule(
   p: RescheduleConfirmPayload
 ): Promise<void> {
+  const sessionToken = getPortalSession(p.companySlug)?.sessionToken;
   const body: Record<string, string> = {
     company_slug: p.companySlug,
     email: p.customerEmail,
+    ...(sessionToken ? { session_token: sessionToken } : {}),
     appointment_id: p.original_appointment_id,
     appointment_row_id: p.appointment_row_id ?? p.original_appointment_id,
     new_date: p.date,
@@ -286,6 +310,11 @@ export async function confirmPortalReschedule(
     data = (await res.json()) as BaseResponse;
   } catch {
     throw new Error('Strežnik je vrnil nepričakovan odgovor.');
+  }
+
+  if (data.code === 'SESSION_INVALID') {
+    clearPortalSession(p.companySlug);
+    throw new PortalSessionExpiredError();
   }
 
   if (!res.ok || data.success === false) {

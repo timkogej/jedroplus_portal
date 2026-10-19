@@ -11,16 +11,19 @@ interface PortalSession {
   companySlug: string;
   verified: boolean;
   verifiedAt: string; // ISO 8601
+  /** Issued by the verify webhook; sent with every portal call. */
+  sessionToken?: string;
 }
 
 const sessionKey = (slug: string) => `portal_session_${slug}`;
 
-export function savePortalSession(slug: string, email: string): void {
+export function savePortalSession(slug: string, email: string, sessionToken?: string): void {
   const session: PortalSession = {
     email,
     companySlug: slug,
     verified: true,
     verifiedAt: new Date().toISOString(),
+    sessionToken,
   };
   try {
     localStorage.setItem(sessionKey(slug), JSON.stringify(session));
