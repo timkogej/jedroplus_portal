@@ -75,7 +75,7 @@ export default function ManagePage() {
     const init = async () => {
       try {
         const res = await fetch(
-          `https://tikej.app.n8n.cloud/webhook/booking?action=init&companySlug=${slug}`
+          `https://n8n.jedroplus.com/webhook/booking?action=init&companySlug=${slug}`
         );
         if (!res.ok) throw new Error('init failed');
         const data = await res.json();
