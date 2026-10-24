@@ -16,7 +16,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Upravljanje Terminov',
+  title: 'Portal za stranke | Customer portal',
   description: 'Upravljajte svoje termine',
 };
 

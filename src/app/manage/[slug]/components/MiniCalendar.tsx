@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useManageStore } from '../store/manageStore';
+import { buttonTextColor } from '../lib/companyProfile';
 
 const MONTHS_SL = [
   'Januar', 'Februar', 'Marec', 'April', 'Maj', 'Junij',
@@ -9,6 +10,7 @@ const MONTHS_SL = [
 ];
 
 const DAYS_SL = ['Po', 'To', 'Sr', 'Če', 'Pe', 'So', 'Ne'];
+const DAYS_EN = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
 interface MiniCalendarProps {
   selectedDate: string | null;
@@ -17,7 +19,7 @@ interface MiniCalendarProps {
 }
 
 export default function MiniCalendar({ selectedDate, onDateSelect, minDate }: MiniCalendarProps) {
-  const { theme } = useManageStore();
+  const { theme, language } = useManageStore();
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -103,7 +105,7 @@ export default function MiniCalendar({ selectedDate, onDateSelect, minDate }: Mi
         <h3
           className="text-xs font-medium uppercase tracking-widest text-gray-600"
         >
-          {MONTHS_SL[viewMonth]} {viewYear}
+          {language === 'en' ? new Intl.DateTimeFormat('en-GB', { month: 'long' }).format(new Date(viewYear, viewMonth, 1)) : MONTHS_SL[viewMonth]} {viewYear}
         </h3>
         <button
           onClick={handleNextMonth}
@@ -115,7 +117,7 @@ export default function MiniCalendar({ selectedDate, onDateSelect, minDate }: Mi
 
       {/* Day headers */}
       <div className="grid grid-cols-7 mb-1">
-        {DAYS_SL.map((day) => (
+        {(language === 'en' ? DAYS_EN : DAYS_SL).map((day) => (
           <div
             key={day}
             className="text-center text-xs text-gray-300 font-medium py-1"
@@ -149,7 +151,7 @@ export default function MiniCalendar({ selectedDate, onDateSelect, minDate }: Mi
                 !selected && !disabled ? 'hover:bg-gray-100 text-gray-700' : '',
                 todayDay && !selected ? 'font-semibold' : '',
               ].join(' ')}
-              style={selected ? { backgroundColor: theme.primaryColor } : undefined}
+              style={selected ? { backgroundColor: theme.primaryColor, color: buttonTextColor(theme.primaryColor) } : undefined}
             >
               {day}
               {todayDay && !selected && (

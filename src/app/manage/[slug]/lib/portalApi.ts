@@ -5,6 +5,7 @@
  */
 
 import { clearPortalSession, getPortalSession } from './portalSession';
+import { splitAppointments } from './appointmentLists';
 
 /** Thrown when the backend no longer accepts the stored session. */
 export class PortalSessionExpiredError extends Error {
@@ -38,7 +39,9 @@ interface RawAppointment {
   end_time?: string;
   durationMinutes?: number;
   duration_minutes?: number;
-  status: 'upcoming' | 'past' | 'cancelled';
+  status?: string;
+  belezi_termin?: boolean;
+  deleted_at?: string | null;
   notes?: string;
   price?: number | null;
   final_price?: number | null;
@@ -55,7 +58,7 @@ export interface NormalisedAppointment {
   time: string;
   endTime: string;
   durationMinutes: number;
-  status: 'upcoming' | 'past' | 'cancelled';
+  status: string;
   notes: string;
   price: number | null;
   finalPrice: number | null;
@@ -72,7 +75,7 @@ function normaliseAppointment(raw: RawAppointment): NormalisedAppointment {
     time: raw.time,
     endTime: raw.end_time ?? '',
     durationMinutes: raw.durationMinutes ?? raw.duration_minutes ?? 0,
-    status: raw.status,
+    status: raw.status ?? '',
     notes: raw.notes ?? '',
     price: raw.price ?? null,
     finalPrice: raw.final_price ?? null,
@@ -194,17 +197,16 @@ export async function getPortalAppointments(
     { company_slug: companySlug, email }
   );
 
-  const all = (data.appointments?.all ?? []).map(normaliseAppointment);
-  const upcoming = (data.appointments?.upcoming ?? []).map(normaliseAppointment);
-  const past = (data.appointments?.past ?? []).map(normaliseAppointment);
-
-  // Derive lists from `all` if the backend only returns that field
-  const resolvedUpcoming =
-    upcoming.length > 0
-      ? upcoming
-      : all.filter((a) => a.status === 'upcoming');
-  const resolvedPast =
-    past.length > 0 ? past : all.filter((a) => a.status === 'past');
+  // The backend's pre-split lists have historically misclassified Slovenian
+  // statuses. Always classify from the complete list in salon local time.
+  const raw = data.appointments?.all ?? [
+    ...(data.appointments?.upcoming ?? []),
+    ...(data.appointments?.past ?? []),
+  ];
+  const all = raw
+    .filter((a) => a.belezi_termin !== false && !a.deleted_at && a.date && a.time)
+    .map(normaliseAppointment);
+  const { upcoming: resolvedUpcoming, past: resolvedPast } = splitAppointments(all);
 
   const customerFirstName =
     data.customer?.firstName ?? data.customer?.first_name ?? '';
@@ -217,6 +219,116 @@ export async function getPortalAppointments(
     customerFirstName,
     companyName,
   };
+}
+
+export interface LoyaltySummary {
+  enabled: boolean;
+  visits: number;
+  points: number;
+  reward_threshold: number;
+  reward_name: string;
+  redeemed_points: number;
+}
+
+export async function getPortalLoyalty(companySlug: string, email: string): Promise<{
+  loyalty: LoyaltySummary | null;
+  ambiguous: boolean;
+}> {
+  const sessionToken = getPortalSession(companySlug)?.sessionToken;
+  if (!sessionToken) throw new PortalSessionExpiredError();
+  const response = await fetch(`/api/loyalty/${encodeURIComponent(companySlug)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, session_token: sessionToken }),
+    cache: 'no-store',
+  });
+  if (response.status === 401) {
+    clearPortalSession(companySlug);
+    throw new PortalSessionExpiredError();
+  }
+  if (!response.ok) throw new Error('Kartice zvestobe trenutno ni mogoče naložiti.');
+  const data = await response.json() as { loyalty?: LoyaltySummary | null; ambiguous?: boolean };
+  return { loyalty: data.loyalty ?? null, ambiguous: data.ambiguous === true };
+}
+
+export interface PortalAnnouncement {
+  id: string;
+  title: string;
+  body: string;
+  image_url: string | null;
+  published_at: string;
+  read_at: string | null;
+}
+
+async function portalAnnouncementRequest(
+  companySlug: string, email: string, method: 'POST' | 'PATCH', announcementId?: string,
+): Promise<Response> {
+  const sessionToken = getPortalSession(companySlug)?.sessionToken;
+  if (!sessionToken) throw new PortalSessionExpiredError();
+  const response = await fetch(`/api/announcements/${encodeURIComponent(companySlug)}`, {
+    method, headers: { 'Content-Type': 'application/json' }, cache: 'no-store',
+    body: JSON.stringify({ email, session_token: sessionToken, ...(announcementId ? { announcement_id: announcementId } : {}) }),
+  });
+  if (response.status === 401) {
+    clearPortalSession(companySlug);
+    throw new PortalSessionExpiredError();
+  }
+  if (!response.ok) throw new Error('Obvestil trenutno ni mogoče naložiti.');
+  return response;
+}
+
+export async function getPortalAnnouncements(companySlug: string, email: string): Promise<PortalAnnouncement[]> {
+  const response = await portalAnnouncementRequest(companySlug, email, 'POST');
+  const data = await response.json() as { announcements?: PortalAnnouncement[] };
+  return data.announcements ?? [];
+}
+
+export async function markPortalAnnouncementRead(companySlug: string, email: string, announcementId: string): Promise<void> {
+  await portalAnnouncementRequest(companySlug, email, 'PATCH', announcementId);
+}
+
+export interface PortalProfile {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  marketingConsent: boolean;
+}
+
+export class PortalProfileConflictError extends Error {
+  constructor(public reason: 'ambiguous_customer' | 'customer_not_found') {
+    super(reason);
+  }
+}
+
+async function profileRequest(companySlug: string, email: string, method: 'POST' | 'PATCH', profile?: PortalProfile): Promise<PortalProfile> {
+  const sessionToken = getPortalSession(companySlug)?.sessionToken;
+  if (!sessionToken) throw new PortalSessionExpiredError();
+  const response = await fetch(`/api/profile/${encodeURIComponent(companySlug)}`, {
+    method, headers: { 'Content-Type': 'application/json' }, cache: 'no-store',
+    body: JSON.stringify({ email, session_token: sessionToken, ...(profile ? {
+      firstName: profile.firstName, lastName: profile.lastName, phone: profile.phone,
+      marketingConsent: profile.marketingConsent,
+    } : {}) }),
+  });
+  if (response.status === 401) {
+    clearPortalSession(companySlug);
+    throw new PortalSessionExpiredError();
+  }
+  const data = await response.json().catch(() => ({})) as { profile?: PortalProfile; error?: string };
+  if (response.status === 409 && (data.error === 'ambiguous_customer' || data.error === 'customer_not_found')) {
+    throw new PortalProfileConflictError(data.error);
+  }
+  if (!response.ok || !data.profile) throw new Error('Profila trenutno ni mogoče shraniti ali naložiti.');
+  return data.profile;
+}
+
+export function getPortalProfile(companySlug: string, email: string) {
+  return profileRequest(companySlug, email, 'POST');
+}
+
+export function savePortalProfile(companySlug: string, email: string, profile: PortalProfile) {
+  return profileRequest(companySlug, email, 'PATCH', profile);
 }
 
 /** Cancel a specific appointment. */
@@ -283,7 +395,7 @@ export async function confirmPortalReschedule(
     email: p.customerEmail,
     ...(sessionToken ? { session_token: sessionToken } : {}),
     appointment_id: p.original_appointment_id,
-    appointment_row_id: p.appointment_row_id ?? p.original_appointment_id,
+    ...(p.appointment_row_id ? { appointment_row_id: p.appointment_row_id } : {}),
     new_date: p.date,
     new_time: p.time,
     ...(p.serviceId ? { service_id: p.serviceId } : {}),

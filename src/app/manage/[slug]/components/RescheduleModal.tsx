@@ -13,6 +13,8 @@ import MiniCalendar from './MiniCalendar';
 import TimeSlots from './TimeSlots';
 import { formatDate, formatDateShort, formatTime } from '../lib/utils';
 import type { Appointment } from '../lib/mockData';
+import { buttonTextColor } from '../lib/companyProfile';
+import { portalText } from '../lib/portalLanguage';
 
 export default function RescheduleModal() {
   const params = useParams();
@@ -29,6 +31,7 @@ export default function RescheduleModal() {
     setCustomerFirstName,
     showToast,
     theme,
+    language,
   } = useManageStore();
 
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
@@ -68,8 +71,8 @@ export default function RescheduleModal() {
       );
       setSlots(available);
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : 'Napaka pri nalaganju terminov.';
+      const msg = language === 'en' ? 'Could not load available times.'
+        : err instanceof Error ? err.message : 'Napaka pri nalaganju terminov.';
       setSlotsError(msg);
     } finally {
       setLoadingSlots(false);
@@ -93,12 +96,11 @@ export default function RescheduleModal() {
         time: selectedTime,
         customerEmail,
         original_appointment_id: appointment.id,
-        appointment_row_id: appointment.id,
         customerName: customerFirstName || undefined,
         customerNote: appointment.notes || undefined,
       });
       showToast(
-        `Termin uspešno prestavljen na ${formatDateShort(selectedDate)} ob ${selectedTime}.`,
+        portalText(language, `Termin uspešno prestavljen na ${formatDateShort(selectedDate, language)} ob ${selectedTime}.`, `Appointment moved to ${formatDateShort(selectedDate, language)} at ${selectedTime}.`),
         'success'
       );
       handleClose();
@@ -111,8 +113,8 @@ export default function RescheduleModal() {
       });
       if (result.customerFirstName) setCustomerFirstName(result.customerFirstName);
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : 'Napaka pri prestavitvi termina.';
+      const msg = language === 'en' ? 'Could not reschedule the appointment.'
+        : err instanceof Error ? err.message : 'Napaka pri prestavitvi termina.';
       showToast(msg, 'error');
     } finally {
       setConfirming(false);
@@ -148,12 +150,12 @@ export default function RescheduleModal() {
                   className="text-lg font-medium text-gray-900"
                   style={{ fontFamily: "var(--font-playfair, 'Playfair Display', Georgia, serif)" }}
                 >
-                  Prestavi Termin
+                  {portalText(language, 'Prestavi termin', 'Reschedule appointment')}
                 </h2>
                 <button
                   onClick={handleClose}
                   className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-50 text-xl leading-none"
-                  aria-label="Zapri"
+                  aria-label={portalText(language, 'Zapri', 'Close')}
                 >
                   ×
                 </button>
@@ -163,10 +165,10 @@ export default function RescheduleModal() {
                 {/* Current appointment info */}
                 <div>
                   <p className="text-sm font-medium text-gray-800">
-                    {appointment.serviceName} z {appointment.employeeName}
+                    {appointment.serviceName} {portalText(language, 'z', 'with')} {appointment.employeeName}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
-                    Trenutno: {formatDate(appointment.date)} ob {formatTime(appointment.time)}
+                    {portalText(language, 'Trenutno:', 'Current:')} {formatDate(appointment.date, language)} {portalText(language, 'ob', 'at')} {formatTime(appointment.time, language)}
                   </p>
                 </div>
 
@@ -176,7 +178,7 @@ export default function RescheduleModal() {
                 {/* Date picker */}
                 <div>
                   <p className="text-xs font-medium uppercase tracking-widest text-gray-400 mb-3">
-                    Izberite nov datum
+                    {portalText(language, 'Izberite nov datum', 'Choose a new date')}
                   </p>
                   <MiniCalendar
                     selectedDate={selectedDate}
@@ -193,11 +195,11 @@ export default function RescheduleModal() {
                       exit={{ opacity: 0, y: 4, transition: { duration: 0.15 } }}
                     >
                       <p className="text-xs font-medium uppercase tracking-widest text-gray-400 mb-3">
-                        Prosti termini za {formatDateShort(selectedDate)}
+                        {portalText(language, 'Prosti termini za', 'Available times for')} {formatDateShort(selectedDate, language)}
                       </p>
 
                       {loadingSlots && (
-                        <p className="text-sm text-gray-400">Nalagam termine...</p>
+                        <p className="text-sm text-gray-400">{portalText(language, 'Nalagam termine...', 'Loading times...')}</p>
                       )}
 
                       {!loadingSlots && slotsError && (
@@ -206,7 +208,7 @@ export default function RescheduleModal() {
 
                       {!loadingSlots && !slotsError && slots.length === 0 && (
                         <p className="text-sm text-gray-400">
-                          Za izbrani datum ni prostih terminov.
+                          {portalText(language, 'Za izbrani datum ni prostih terminov.', 'No times are available for this date.')}
                         </p>
                       )}
 
@@ -231,20 +233,21 @@ export default function RescheduleModal() {
                       className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-4 space-y-3"
                     >
                       <p className="text-sm text-gray-700 leading-snug">
-                        Ali ste prepričani, da želite prestaviti termin na{' '}
-                        <span className="font-medium">{formatDateShort(selectedDate)}</span>{' '}
-                        ob <span className="font-medium">{selectedTime}</span>?
+                        {portalText(language, 'Ali ste prepričani, da želite prestaviti termin na ', 'Move this appointment to ')}
+                        <span className="font-medium">{formatDateShort(selectedDate, language)}</span>{' '}
+                        {portalText(language, 'ob', 'at')} <span className="font-medium">{selectedTime}</span>?
                       </p>
                       <button
                         onClick={handleConfirm}
                         disabled={confirming}
-                        className="w-full py-3.5 rounded-xl text-white text-sm font-medium tracking-wide transition-opacity duration-200"
+                        className="w-full py-3.5 rounded-xl text-sm font-medium tracking-wide transition-opacity duration-200"
                         style={{
-                          background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`,
+                          backgroundColor: theme.primaryColor,
+                          color: buttonTextColor(theme.primaryColor),
                           opacity: confirming ? 0.6 : 1,
                         }}
                       >
-                        {confirming ? 'Posodabljam...' : 'Da, potrdi prestavitev'}
+                        {confirming ? portalText(language, 'Posodabljam...', 'Updating...') : portalText(language, 'Da, potrdi prestavitev', 'Confirm reschedule')}
                       </button>
                     </motion.div>
                   )}

@@ -6,7 +6,7 @@ export interface Appointment {
   time: string;
   endTime?: string;
   durationMinutes: number;
-  status: 'upcoming' | 'past' | 'cancelled';
+  status: string;
   notes?: string;
   price?: number | null;
   finalPrice?: number | null;

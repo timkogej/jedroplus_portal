@@ -1,6 +1,7 @@
 'use client';
 
 import { useManageStore } from '../store/manageStore';
+import { buttonTextColor } from '../lib/companyProfile';
 
 interface TimeSlotsProps {
   slots: string[];
@@ -26,7 +27,7 @@ export default function TimeSlots({ slots, selectedTime, onTimeSelect }: TimeSlo
                 ? {
                     backgroundColor: theme.primaryColor,
                     borderColor: theme.primaryColor,
-                    color: 'white',
+                    color: buttonTextColor(theme.primaryColor),
                   }
                 : {
                     backgroundColor: 'white',

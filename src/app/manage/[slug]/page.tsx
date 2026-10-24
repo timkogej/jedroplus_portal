@@ -3,26 +3,19 @@
 import { useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { AnimatePresence } from 'framer-motion';
-import { useManageStore } from './store/manageStore';
+import { DEFAULT_THEME, useManageStore } from './store/manageStore';
+import { getCompanyProfile } from './lib/companyProfile';
 import ManageLayout from './components/ManageLayout';
 import AuthForm from './components/AuthForm';
 import VerificationPending from './components/VerificationPending';
 import AppointmentsDashboard from './components/AppointmentsDashboard';
-import { getPortalAppointments, portalVerify } from './lib/portalApi';
+import { getPortalAppointments, portalVerify, PortalSessionExpiredError } from './lib/portalApi';
 import {
   getPortalSession,
   savePortalSession,
-  clearPortalSession,
 } from './lib/portalSession';
-import type { NormalisedAppointment } from './lib/portalApi';
 import type { Appointment } from './lib/mockData';
-
-const DEFAULT_THEME = {
-  primaryColor: '#8B5CF6',
-  secondaryColor: '#A78BFA',
-  bgFrom: '#7C3AED',
-  bgTo: '#4F46E5',
-};
+import { portalText } from './lib/portalLanguage';
 
 export default function ManagePage() {
   const params = useParams();
@@ -31,7 +24,11 @@ export default function ManagePage() {
 
   const {
     setTheme,
+    setThemeReady,
+    themeReady,
+    companySlug,
     setCompanyInfo,
+    setCompanyProfile,
     setAppointmentLists,
     setLoadingAppointments,
     setAppointmentsError,
@@ -41,10 +38,18 @@ export default function ManagePage() {
     setCurrentView,
     showToast,
     currentView,
+    setLanguage,
+    language,
   } = useManageStore();
 
+  useEffect(() => {
+    try { if (localStorage.getItem('portal_language') === 'en') setLanguage('en'); } catch { /* unavailable */ }
+  }, [setLanguage]);
+
+  useEffect(() => { document.documentElement.lang = language; }, [language]);
+
   /** Fetch appointments from backend and update store. */
-  const loadAppointments = async (companySlug: string, email: string) => {
+  const loadAppointments = async (companySlug: string, email: string): Promise<boolean> => {
     setLoadingAppointments(true);
     setAppointmentsError(null);
     try {
@@ -60,35 +65,53 @@ export default function ManagePage() {
       if (result.companyName) {
         setCompanyInfo(result.companyName, companySlug);
       }
+      return true;
     } catch (err) {
+      if (err instanceof PortalSessionExpiredError) {
+        setAuthenticated(false);
+        setCurrentView('auth');
+        return false;
+      }
       const msg =
-        err instanceof Error ? err.message : 'Napaka pri nalaganju terminov.';
+        language === 'en' ? 'Could not load appointments.' : err instanceof Error ? err.message : 'Napaka pri nalaganju terminov.';
       setAppointmentsError(msg);
+      return true;
     } finally {
       setLoadingAppointments(false);
     }
   };
 
-  // ── 1. Fetch company theme/info ──────────────────────────────────────────
+  // ── 1. Load public company profile before the customer signs in ──────────
   useEffect(() => {
     if (!slug) return;
+    setTheme(DEFAULT_THEME);
+    setCompanyInfo('', slug);
+    setCompanyProfile(null);
+    setThemeReady(false);
+    let active = true;
     const init = async () => {
       try {
-        const res = await fetch(
-          `https://n8n.jedroplus.com/webhook/booking?action=init&companySlug=${slug}`
-        );
-        if (!res.ok) throw new Error('init failed');
-        const data = await res.json();
-        if (data.theme) setTheme(data.theme);
-        if (data.company?.name) {
-          setCompanyInfo(data.company.name, data.company?.slug ?? slug);
+        const data = await getCompanyProfile(slug);
+        if (!active) return;
+        if (data.theme) setTheme({
+          primaryColor: data.theme.primaryColor ?? DEFAULT_THEME.primaryColor,
+          secondaryColor: data.theme.secondaryColor ?? data.theme.primaryColor ?? DEFAULT_THEME.secondaryColor,
+          bgFrom: data.theme.bgFrom ?? DEFAULT_THEME.bgFrom,
+          bgTo: data.theme.bgTo ?? DEFAULT_THEME.bgTo,
+        });
+        if (data.company) {
+          setCompanyProfile(data.company);
+          setCompanyInfo(data.company.name, slug);
         }
       } catch {
-        setTheme(DEFAULT_THEME);
+        // The neutral theme remains usable when public company data is unavailable.
+      } finally {
+        if (active) setThemeReady(true);
       }
     };
-    init();
-  }, [slug, setTheme, setCompanyInfo]);
+    void init();
+    return () => { active = false; };
+  }, [slug, setTheme, setThemeReady, setCompanyInfo, setCompanyProfile]);
 
   // ── 2. Handle magic-link token OR restore existing session ───────────────
   useEffect(() => {
@@ -111,15 +134,12 @@ export default function ManagePage() {
           setCustomerEmail(emailParam);
           if (firstName) setCustomerFirstName(firstName);
           setAuthenticated(true);
-          await loadAppointments(slug, emailParam);
-          setCurrentView('dashboard');
+          if (await loadAppointments(slug, emailParam)) setCurrentView('dashboard');
           // Remove token/email from URL without triggering a navigation
           window.history.replaceState({}, '', `/manage/${slug}`);
         } catch (err) {
-          const msg =
-            err instanceof Error
-              ? err.message
-              : 'Napaka pri preverjanju povezave.';
+          const msg = language === 'en' ? 'Could not verify the sign-in link.'
+            : err instanceof Error ? err.message : 'Napaka pri preverjanju povezave.';
           showToast(msg, 'error');
           setCurrentView('auth');
         }
@@ -134,15 +154,20 @@ export default function ManagePage() {
       setCustomerEmail(session.email);
       setAuthenticated(true);
       setCurrentView('dashboard');
-      loadAppointments(slug, session.email).catch(() => {
-        // Session may be stale — clear it and send to login
-        clearPortalSession(slug);
-        setAuthenticated(false);
-        setCurrentView('auth');
-      });
+      void loadAppointments(slug, session.email);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, searchParams]);
+
+  // Never paint an email button in another company's (or the fallback) colour
+  // while the public profile is still loading.
+  if (!themeReady || companySlug !== slug) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
+        <p className="text-sm text-gray-400">{portalText(language, 'Nalagam portal...', 'Loading portal...')}</p>
+      </div>
+    );
+  }
 
   return (
     <ManageLayout>

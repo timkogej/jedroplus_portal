@@ -16,8 +16,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'Upravljanje Terminov',
-  description: 'Upravljajte svoje termine',
+  title: 'Portal za stranke | Customer portal',
+  description: 'Termini, zvestoba in obvestila | Appointments, loyalty and updates',
 };
 
 export default function ManageSlugLayout({ children }: { children: React.ReactNode }) {
