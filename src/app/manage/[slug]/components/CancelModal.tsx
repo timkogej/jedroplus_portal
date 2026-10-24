@@ -7,6 +7,7 @@ import { useManageStore } from '../store/manageStore';
 import { cancelPortalAppointment, getPortalAppointments } from '../lib/portalApi';
 import { formatDate, formatTime } from '../lib/utils';
 import type { Appointment } from '../lib/mockData';
+import { portalText } from '../lib/portalLanguage';
 
 export default function CancelModal() {
   const params = useParams();
@@ -21,6 +22,7 @@ export default function CancelModal() {
     setAppointmentLists,
     setCustomerFirstName,
     showToast,
+    language,
   } = useManageStore();
 
   const [loading, setLoading] = useState(false);
@@ -32,7 +34,7 @@ export default function CancelModal() {
     setLoading(true);
     try {
       await cancelPortalAppointment(slug, customerEmail, appointment.id);
-      showToast('Termin je bil uspešno odpovedan.', 'success');
+      showToast(portalText(language, 'Termin je bil uspešno odpovedan.', 'Appointment cancelled.'), 'success');
       closeCancelModal();
       // Refresh the appointments list from backend
       const result = await getPortalAppointments(slug, customerEmail);
@@ -43,8 +45,8 @@ export default function CancelModal() {
       });
       if (result.customerFirstName) setCustomerFirstName(result.customerFirstName);
     } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : 'Napaka pri odpovedi termina.';
+      const msg = language === 'en' ? 'Could not cancel the appointment.'
+        : err instanceof Error ? err.message : 'Napaka pri odpovedi termina.';
       showToast(msg, 'error');
     } finally {
       setLoading(false);
@@ -79,12 +81,12 @@ export default function CancelModal() {
                   className="text-lg font-medium text-gray-900"
                   style={{ fontFamily: "var(--font-playfair, 'Playfair Display', Georgia, serif)" }}
                 >
-                  Odpoved Termina
+                  {portalText(language, 'Odpoved termina', 'Cancel appointment')}
                 </h2>
                 <button
                   onClick={closeCancelModal}
                   className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-50 text-xl leading-none"
-                  aria-label="Zapri"
+                  aria-label={portalText(language, 'Zapri', 'Close')}
                 >
                   ×
                 </button>
@@ -92,7 +94,7 @@ export default function CancelModal() {
 
               <div className="px-6 py-6">
                 <p className="text-sm text-gray-500 mb-5 leading-relaxed">
-                  Ali ste prepričani, da želite odpovedati termin?
+                  {portalText(language, 'Ali ste prepričani, da želite odpovedati termin?', 'Are you sure you want to cancel this appointment?')}
                 </p>
 
                 <div className="bg-gray-50 rounded-xl px-4 py-4 mb-6">
@@ -101,7 +103,7 @@ export default function CancelModal() {
                   </p>
                   <p className="text-sm text-gray-500 mb-2">{appointment.employeeName}</p>
                   <p className="text-xs text-gray-400">
-                    {formatDate(appointment.date)} ob {formatTime(appointment.time)}
+                    {formatDate(appointment.date, language)} {portalText(language, 'ob', 'at')} {formatTime(appointment.time, language)}
                   </p>
                 </div>
 
@@ -111,14 +113,14 @@ export default function CancelModal() {
                     disabled={loading}
                     className="flex-1 py-3 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors duration-200 disabled:opacity-50"
                   >
-                    Prekliči
+                    {portalText(language, 'Prekliči', 'Keep appointment')}
                   </button>
                   <button
                     onClick={handleConfirm}
                     disabled={loading}
                     className="flex-1 py-3 rounded-xl text-sm font-medium text-white bg-red-500 hover:bg-red-600 transition-colors duration-200 disabled:opacity-60"
                   >
-                    {loading ? 'Odpovedovanje...' : 'Odpovej termin'}
+                    {loading ? portalText(language, 'Odpovedovanje...', 'Cancelling...') : portalText(language, 'Odpovej termin', 'Cancel appointment')}
                   </button>
                 </div>
               </div>

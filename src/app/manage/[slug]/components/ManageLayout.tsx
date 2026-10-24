@@ -8,13 +8,14 @@ export default function ManageLayout({ children }: { children: React.ReactNode }
 
   return (
     <div
-      className="min-h-screen bg-[#FAFAFA]"
+      className="min-h-screen"
       style={
         {
           '--primary-color': theme.primaryColor,
           '--secondary-color': theme.secondaryColor,
           '--bg-from': theme.bgFrom,
           '--bg-to': theme.bgTo,
+          background: `linear-gradient(180deg, color-mix(in srgb, ${theme.primaryColor} 6%, #FAFAFA) 0%, #FAFAFA 38%)`,
           fontFamily: "var(--font-inter, 'Inter', -apple-system, sans-serif)",
         } as React.CSSProperties
       }

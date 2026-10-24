@@ -7,12 +7,14 @@ import { useManageStore } from '../store/manageStore';
 import { portalLogin } from '../lib/portalApi';
 import ManageHeader from './ManageHeader';
 import PoweredByFooter from './PoweredByFooter';
+import CompanyContact from './CompanyContact';
+import { portalText } from '../lib/portalLanguage';
 
 export default function VerificationPending() {
   const params = useParams();
   const slug = params?.slug as string;
 
-  const { customerEmail, theme } = useManageStore();
+  const { customerEmail, theme, language } = useManageStore();
 
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
@@ -48,27 +50,27 @@ export default function VerificationPending() {
             className="text-[2rem] font-medium text-gray-900 mb-5 leading-tight"
             style={{ fontFamily: "var(--font-playfair, 'Playfair Display', Georgia, serif)" }}
           >
-            Potrdite Vaš Email
+            {portalText(language, 'Potrdite e-pošto', 'Check your email')}
           </h2>
 
           <p className="text-sm text-gray-500 leading-relaxed mb-1">
-            Na{' '}
+            {portalText(language, 'Na ', 'We sent a sign-in link to ')}
             <span className="text-gray-800 font-medium">{customerEmail}</span>{' '}
-            smo poslali potrditveno povezavo.
+            {portalText(language, 'smo poslali povezavo za prijavo.', '.')}
           </p>
           <p className="text-sm text-gray-400 mb-12">
-            Preverite svoj email nabiralnik.
+            {portalText(language, 'Preverite svoj e-poštni nabiralnik.', 'Please check your inbox.')}
           </p>
 
           <p className="text-sm text-gray-400 mb-2">
-            Niste prejeli emaila?{' '}
+            {portalText(language, 'Niste prejeli sporočila?', "Didn't receive it?")}{' '}
             <button
               onClick={handleResend}
               disabled={resending}
               className="font-medium transition-colors duration-200 hover:underline disabled:opacity-50"
               style={{ color: resent ? theme.primaryColor : '#374151' }}
             >
-              {resending ? 'Pošiljam...' : resent ? 'Poslano ✓' : 'Pošlji ponovno'}
+              {resending ? portalText(language, 'Pošiljam...', 'Sending...') : resent ? portalText(language, 'Poslano ✓', 'Sent ✓') : portalText(language, 'Pošlji ponovno', 'Resend')}
             </button>
           </p>
 
@@ -78,6 +80,7 @@ export default function VerificationPending() {
         </div>
       </div>
 
+      <CompanyContact />
       <PoweredByFooter />
     </motion.div>
   );

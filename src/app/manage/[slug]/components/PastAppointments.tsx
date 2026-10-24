@@ -4,13 +4,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useManageStore } from '../store/manageStore';
 import type { Appointment } from '../lib/mockData';
 import { formatDateShort, formatTime } from '../lib/utils';
+import { appointmentStatus } from '../lib/appointmentLists';
+import { portalText } from '../lib/portalLanguage';
 
 interface PastAppointmentsProps {
   appointments: Appointment[];
 }
 
 export default function PastAppointments({ appointments }: PastAppointmentsProps) {
-  const { showPastAppointments, togglePastAppointments } = useManageStore();
+  const { showPastAppointments, togglePastAppointments, language } = useManageStore();
 
   if (appointments.length === 0) return null;
 
@@ -18,13 +20,13 @@ export default function PastAppointments({ appointments }: PastAppointmentsProps
     <div className="mt-10">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xs font-medium uppercase tracking-widest text-gray-400">
-          Pretekli termini
+          {portalText(language, 'Pretekli in odpovedani termini', 'Past and cancelled appointments')}
         </h2>
         <button
           onClick={togglePastAppointments}
           className="text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors duration-200"
         >
-          {showPastAppointments ? 'Skrij ↑' : 'Prikaži ↓'}
+          {showPastAppointments ? portalText(language, 'Skrij ↑', 'Hide ↑') : portalText(language, 'Prikaži ↓', 'Show ↓')}
         </button>
       </div>
 
@@ -50,8 +52,14 @@ export default function PastAppointments({ appointments }: PastAppointmentsProps
                     <span className="text-sm text-gray-400">{apt.employeeName}</span>
                   </div>
                   <p className="text-xs text-gray-400">
-                    {formatDateShort(apt.date)} · {formatTime(apt.time)}
+                    {formatDateShort(apt.date, language)} · {formatTime(apt.time, language)}
                   </p>
+                  {appointmentStatus(apt.status) === 'cancelled' && (
+                    <p className="text-xs text-gray-500 mt-1">{portalText(language, 'Odpovedan', 'Cancelled')}</p>
+                  )}
+                  {appointmentStatus(apt.status) === 'no_show' && (
+                    <p className="text-xs text-gray-500 mt-1">{portalText(language, 'Stranka ni prišla', 'No-show')}</p>
+                  )}
                 </div>
               ))}
             </div>

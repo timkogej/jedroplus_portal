@@ -7,6 +7,9 @@ import { useManageStore } from '../store/manageStore';
 import { portalLogin } from '../lib/portalApi';
 import ManageHeader from './ManageHeader';
 import PoweredByFooter from './PoweredByFooter';
+import CompanyContact from './CompanyContact';
+import { buttonTextColor } from '../lib/companyProfile';
+import { portalText } from '../lib/portalLanguage';
 
 export default function AuthForm() {
   const params = useParams();
@@ -19,11 +22,11 @@ export default function AuthForm() {
   // whether the email exists in the system)
   const [submitted, setSubmitted] = useState(false);
 
-  const { setCustomerEmail, setCurrentView, theme } = useManageStore();
+  const { setCustomerEmail, setCurrentView, theme, language } = useManageStore();
 
   const validateEmail = (): boolean => {
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setEmailError('Vnesite veljaven email naslov.');
+      setEmailError(portalText(language, 'Vnesite veljaven e-poštni naslov.', 'Enter a valid email address.'));
       return false;
     }
     setEmailError(undefined);
@@ -84,17 +87,17 @@ export default function AuthForm() {
               className="text-[2rem] font-medium text-gray-900 mb-3 leading-tight"
               style={{ fontFamily: "var(--font-playfair, 'Playfair Display', Georgia, serif)" }}
             >
-              Upravljanje Terminov
+              {portalText(language, 'Vaš portal', 'Your portal')}
             </h2>
             <p className="text-sm text-gray-400 leading-relaxed">
-              Vnesite email za dostop do vaših terminov
+              {portalText(language, 'Termini, točke zvestobe in obvestila na enem mestu.', 'Appointments, loyalty points and updates in one place.')}
             </p>
           </div>
 
           <form onSubmit={handleSubmit} noValidate>
             <div className="mb-10">
               <label className="block text-xs font-medium uppercase tracking-widest text-gray-400 mb-3">
-                Email
+                {portalText(language, 'E-pošta', 'Email')}
               </label>
               <input
                 type="email"
@@ -118,24 +121,26 @@ export default function AuthForm() {
 
             {submitted && (
               <p className="text-sm text-gray-500 text-center mb-6 leading-relaxed">
-                Če email obstaja v sistemu, smo vam poslali povezavo za prijavo.
+                {portalText(language, 'Če e-pošta obstaja v sistemu, smo vam poslali povezavo za prijavo.', 'If this email is registered, we have sent you a sign-in link.')}
               </p>
             )}
 
             <button
               type="submit"
               disabled={loading || submitted}
-              className="w-full py-4 rounded-xl text-white text-sm font-medium tracking-wide transition-opacity duration-200 hover:opacity-90 active:opacity-80 disabled:opacity-60"
+              className="w-full py-4 rounded-xl text-sm font-medium tracking-wide transition-opacity duration-200 hover:opacity-90 active:opacity-80 disabled:opacity-60"
               style={{
-                background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.secondaryColor})`,
+                backgroundColor: theme.primaryColor,
+                color: buttonTextColor(theme.primaryColor),
               }}
             >
-              {loading ? 'Pošiljam...' : submitted ? 'Poslano ✓' : 'Nadaljuj'}
+              {loading ? portalText(language, 'Pošiljam...', 'Sending...') : submitted ? portalText(language, 'Poslano ✓', 'Sent ✓') : portalText(language, 'Nadaljuj', 'Continue')}
             </button>
           </form>
         </div>
       </div>
 
+      <CompanyContact />
       <PoweredByFooter />
     </motion.div>
   );

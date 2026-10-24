@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import type { Appointment } from '../lib/mockData';
+import type { CompanyProfile } from '../lib/companyProfile';
 
 export type ViewState = 'auth' | 'verification' | 'dashboard';
+export type PortalLanguage = 'sl' | 'en';
 
 export interface Theme {
   primaryColor: string;
@@ -20,10 +22,12 @@ interface ManageStore {
   themeReady: boolean;
   companyName: string;
   companySlug: string;
+  companyProfile: CompanyProfile | null;
 
   currentView: ViewState;
   customerEmail: string;
   customerFirstName: string;
+  language: PortalLanguage;
   isAuthenticated: boolean;
 
   allAppointments: Appointment[];
@@ -42,9 +46,11 @@ interface ManageStore {
   setTheme: (theme: Theme) => void;
   setThemeReady: (ready: boolean) => void;
   setCompanyInfo: (name: string, slug: string) => void;
+  setCompanyProfile: (profile: CompanyProfile | null) => void;
   setCurrentView: (view: ViewState) => void;
   setCustomerEmail: (email: string) => void;
   setCustomerFirstName: (name: string) => void;
+  setLanguage: (language: PortalLanguage) => void;
   setAuthenticated: (value: boolean) => void;
   setAppointmentLists: (lists: { all: Appointment[]; upcoming: Appointment[]; past: Appointment[] }) => void;
   setLoadingAppointments: (loading: boolean) => void;
@@ -59,11 +65,11 @@ interface ManageStore {
   logout: () => void;
 }
 
-const DEFAULT_THEME: Theme = {
-  primaryColor: '#8B5CF6',
-  secondaryColor: '#A78BFA',
-  bgFrom: '#7C3AED',
-  bgTo: '#4F46E5',
+export const DEFAULT_THEME: Theme = {
+  primaryColor: '#374151',
+  secondaryColor: '#4B5563',
+  bgFrom: '#F9FAFB',
+  bgTo: '#F3F4F6',
 };
 
 export const useManageStore = create<ManageStore>((set) => ({
@@ -71,10 +77,12 @@ export const useManageStore = create<ManageStore>((set) => ({
   themeReady: false,
   companyName: '',
   companySlug: '',
+  companyProfile: null,
 
   currentView: 'auth',
   customerEmail: '',
   customerFirstName: '',
+  language: 'sl',
   isAuthenticated: false,
 
   allAppointments: [],
@@ -93,9 +101,14 @@ export const useManageStore = create<ManageStore>((set) => ({
   setTheme: (theme) => set({ theme }),
   setThemeReady: (ready) => set({ themeReady: ready }),
   setCompanyInfo: (name, slug) => set({ companyName: name, companySlug: slug }),
+  setCompanyProfile: (profile) => set({ companyProfile: profile }),
   setCurrentView: (view) => set({ currentView: view }),
   setCustomerEmail: (email) => set({ customerEmail: email }),
   setCustomerFirstName: (name) => set({ customerFirstName: name }),
+  setLanguage: (language) => {
+    try { localStorage.setItem('portal_language', language); } catch { /* unavailable */ }
+    set({ language });
+  },
   setAuthenticated: (value) => set({ isAuthenticated: value }),
   setAppointmentLists: ({ all, upcoming, past }) =>
     set({ allAppointments: all, upcomingAppointments: upcoming, pastAppointments: past }),
